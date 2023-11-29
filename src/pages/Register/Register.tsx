@@ -11,6 +11,8 @@ import { omit } from 'lodash';
 import { isAxiosUnprocessableEntityError } from "../../utils/utils";
 import { ErrorResponse } from "../../types/utils.type";
 import Button from "../../components/Button";
+type FormData = Pick<Schema, 'email' | 'password' | 'confirm_passowrd'>;
+const formData = schema.pick(['email', 'password', 'confirm_passowrd'])
 const Register = () => {
     const {
         register,
@@ -18,15 +20,15 @@ const Register = () => {
         setError,
 
         formState: { errors }
-    } = useForm<Schema>({
-        resolver: yupResolver(schema)
+    } = useForm<FormData>({
+        resolver: yupResolver(formData)
     })
     const registerAccountMutation = useMutation({
-        mutationFn: (body: Omit<Schema, 'confirm_passowrd'>) => authApi.registerAccount(body)
+        mutationFn: (body: Pick<Schema, 'email' | 'password'>) => authApi.registerAccount(body)
     });
 
     const onSubmit = handleSubmit((data) => {
-        const body = omit(data, ['confirm_passowrd'])
+        const body = omit(data, 'confirm_password');
         registerAccountMutation.mutate(body, {
             onSuccess: (data) => {
                 console.log(data);
@@ -35,7 +37,7 @@ const Register = () => {
                 if (isAxiosUnprocessableEntityError<ErrorResponse<Omit<Schema, 'confirm_password'>>>(error)) {
                     const formError = error.response?.data.data
                     if (formError) {
-                        Object.keys(formError).forEach(key => setError(key as keyof Omit<Schema, 'confirm_password'>, {
+                        Object.keys(formError).forEach(key => setError(key as keyof FormData, {
                             message: formError[key as keyof Omit<Schema, 'confirm_password'>],
                             type: "Server"
                         }))
